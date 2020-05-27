@@ -10,6 +10,7 @@ import Foundation
 
 protocol DataFetcer {
     func getFeed(nextBatchFrom: String?, response: @escaping (FeedResponse?) -> Void)
+    func getLike(isLiked: Bool, postId: String, sourceId: String, response: @escaping (LikeResponse?) -> Void)
 }
 
 struct NetworkDataFetcher: DataFetcer {
@@ -25,10 +26,22 @@ struct NetworkDataFetcher: DataFetcer {
         networking.request(path: API.newsFeed, params: params) { (data, error) in
             if let error = error {
                 print (error.localizedDescription)
-                response(nil )
+                response(nil)
             }
-            
             let decoded = self.decodeJSON(type: FeedResponseWrapped.self, from: data)
+            response(decoded?.response)
+        }
+    }
+    
+    func getLike(isLiked: Bool, postId: String, sourceId: String, response: @escaping (LikeResponse?) -> Void) {
+        let type = isLiked == true ? API.likeAdd : API.likeDelete
+        let params = ["type" : "post", "item_id" : postId, "owner_id" : sourceId]
+        networking.request(path: type, params: params) { (data, error) in
+            if let error = error {
+                print (error.localizedDescription)
+                response(nil)
+            }
+            let decoded = self.decodeJSON(type: LikeResponseWrapped.self, from: data)
             response(decoded?.response)
         }
     }

@@ -49,12 +49,17 @@ import Foundation
     let text: String?
     let date: Double
     let comments: CountableItem?
-    let likes: CountableItem?
+    let likes: Like?
     let reposts: CountableItem?
     let views: CountableItem?
     let attachments: [Attachment]?
  }
  
+ 
+ struct Like: Decodable {
+    let count: Int
+    let userLikes: Int
+ }
  struct Attachment: Decodable {
     let photo: Photo?
  }

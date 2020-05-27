@@ -10,7 +10,7 @@ import UIKit
 import VK_ios_sdk
 
 @UIApplicationMain
-   class AppDelegate: UIResponder, UIApplicationDelegate, AuthServiceDelegate {
+    class AppDelegate: UIResponder, UIApplicationDelegate, AuthServiceDelegate {
 
     var authService: AuthService!
 

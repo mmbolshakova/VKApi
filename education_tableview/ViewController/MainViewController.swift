@@ -42,7 +42,6 @@ class MainViewController: UIViewController {
         tableView.backgroundColor = .clear
         view.backgroundColor = #colorLiteral(red: 0.689327538, green: 0.8426131606, blue: 0.9422802329, alpha: 1)
         tableView.register(NewsTableViewCell.nib, forCellReuseIdentifier: NewsTableViewCell.cellId)
-        tableView.delegate = self
         tableView.dataSource = self
         tableView.addSubview(refreshControl)
         tableView.rowHeight = UITableView.automaticDimension
@@ -61,17 +60,20 @@ class MainViewController: UIViewController {
         let dateTitle = dateFormatter.string(from: date)
         let photoAttach = self.photoAttach(feedItem: feedItem)
         let sizes = cellCalculator.sizes(postText: feedItem.text, photoAttach: photoAttach)
-        
+       
         return FeedViewModel.Cell.init(photoAttach: photoAttach,
                                        getIconUrl: profile.photo,
                                        getName: profile.name,
                                        getDate: dateTitle,
                                        getNewsText: feedItem.text,
                                        getLike: formatCounter(feedItem.likes?.count),
+                                       getUserLike: feedItem.likes?.userLikes,
                                        getComment: formatCounter(feedItem.comments?.count),
                                        getShare: formatCounter(feedItem.reposts?.count),
                                        getViews: formatCounter(feedItem.views?.count),
-                                       sizes: sizes)
+                                       sizes: sizes,
+                                       getPostId: feedItem.postId,
+                                       getSourceId: feedItem.sourceId)
     }
     
     private func photoAttach(feedItem: FeedItem) -> FeedViewModel.FeedCellPhotoAttach? {
@@ -138,13 +140,34 @@ class MainViewController: UIViewController {
             chooseRequest(from: Requests.RequestType.getNextBatch)
         }
     }
+    
+    private func changeLike(isLiked: Bool, post: String, source: String) {
+        fetcher.getLike(isLiked: isLiked, postId: post, sourceId: source) { (likeResponse) in
+            guard let likeResponse = likeResponse else { return }
+            print (likeResponse)
+        }
+    }
 }
 
-extension MainViewController: UITableViewDelegate {
+extension MainViewController: CellDelegate {
     
+    func didTapButton(index: Int) {
+        var isLiked: Bool
+        let userLike = feedViewModel.cells[index].getUserLike
+        let postId = String(feedViewModel.cells[index].getPostId!)
+        let sourceId = String(feedViewModel.cells[index].getSourceId!)
+        if userLike == 0 {
+            isLiked = true
+        } else {
+            isLiked = false
+        }
+        changeLike(isLiked: isLiked, post: postId, source: sourceId)
+        chooseRequest(from: Requests.RequestType.getNewsFeed)
+    }
 }
 
 extension MainViewController: UITableViewDataSource {
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return feedViewModel.cells.count
     }
@@ -152,6 +175,8 @@ extension MainViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: NewsTableViewCell.cellId, for: indexPath) as! NewsTableViewCell
         let cellViewModel = feedViewModel.cells[indexPath.row]
+        cell.cellDelegate = self
+        cell.index = indexPath
         cell.set(viewModel: cellViewModel)
         return cell
     }
